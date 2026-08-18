@@ -189,7 +189,9 @@ public class DoorOpener : BotComponentClassBase
         List<DoorDataStruct> doors
     )
     {
-        const float SPHERECAST_RADIUS = 0.15f;
+        // Widened from 0.15f: a bot sprinting/retreating under combat steering smoothing doesn't always
+        // face squarely at a door it's jammed against, and this narrow a cast can miss it every tick.
+        const float SPHERECAST_RADIUS = 0.3f;
         const float SPHERECAST_DISTANCE = 1.5f;
         if (Physics.SphereCast(ray, SPHERECAST_RADIUS, out RaycastHit hit, SPHERECAST_DISTANCE, LayerMaskClass.PlayerStaticDoorMask))
         {
@@ -278,6 +280,33 @@ public class DoorOpener : BotComponentClassBase
                 }
             }
         }
+
+        // Proximity fallback: every directional cast above missed. All candidates in `doors` were already
+        // filtered to interaction range by DoorDataStruct.InRangeToInteract before reaching here (see
+        // DoorOpener.SearchForDoors), so if a bot is jammed against a door but not squarely facing it
+        // (typical while sprinting/retreating), just grab the nearest one instead of leaving it wedged
+        // until its facing happens to line up.
+        index = -1;
+        var closestSqr = float.MaxValue;
+        for (var i = 0; i < doors.Count; i++)
+        {
+            var candidate = doors[i];
+            if (!CanInteract(candidate.Link)) continue;
+            if (candidate.Door.DoorState != EDoorState.Shut && candidate.Door.DoorState != EDoorState.Open) continue;
+            if (candidate.CurrentSqrMagnitude >= closestSqr) continue;
+            closestSqr = candidate.CurrentSqrMagnitude;
+            index = i;
+        }
+        if (index >= 0)
+        {
+            data = doors[index];
+#if DEBUG
+            Logger.LogDebug($"[{data.Door.Id}] no directional door hit — using closest in-range door as fallback");
+#endif
+            interactionType = data.Door.DoorState == EDoorState.Open ? EInteractionType.Close : EInteractionType.Open;
+            return true;
+        }
+
         interactionType = EInteractionType.Open; // Default to open if no doors found
         return false;
     }
