@@ -27,7 +27,7 @@ public class CoverFinderComponent : BotComponentBase
         base.Init(bot.PlayerComponent, bot.BotOwner);
         Bot = bot;
 
-        CoverAnalyzer = new CoverAnalyzer(bot, this);
+        CoverAnalyzer = new CoverAnalyzer(bot);
 
         bot.BotActivation.BotActiveToggle.OnToggle += botEnabled;
         bot.BotActivation.BotStandByToggle.OnToggle += botInStandBy;

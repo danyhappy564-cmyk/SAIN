@@ -100,6 +100,8 @@ public class SAINMoverClass : BotComponentClassBase, IBotPathFinder
 
     public void PathComplete(OperationResult result, IBotPathData pathData)
     {
+        OnPathComplete?.Invoke(result, pathData);
+
         // We are swapping between two preallocated paths, so we need to check which one is active and check if the other one is prepared.
         if (pathData == _preparedPath1)
         {

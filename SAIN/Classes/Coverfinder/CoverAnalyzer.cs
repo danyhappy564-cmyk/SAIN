@@ -7,7 +7,7 @@ using UnityEngine.AI;
 
 namespace SAIN.SAINComponent.SubComponents.CoverFinder;
 
-public class CoverAnalyzer(BotComponent bot, CoverFinderComponent coverFinder) : BotBase(bot)
+public class CoverAnalyzer(BotComponent bot) : BotBase(bot)
 {
     public bool CheckCreateNewCoverPoint(
         Collider collider,

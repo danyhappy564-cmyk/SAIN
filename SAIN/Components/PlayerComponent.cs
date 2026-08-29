@@ -303,7 +303,7 @@ public class PlayerComponent : MonoBehaviour, IDisposable, ISPlayer
             Player = iPlayer as Player;
             Name = Player.name;
 
-            ActivationClass = new PersonActiveClass(this);
+            ActivationClass = new PersonActiveClass();
 
             OtherPlayersData = new OtherPlayersData(this);
             PlayerTickData = new PlayerTickData(this);

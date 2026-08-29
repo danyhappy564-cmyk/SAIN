@@ -3,7 +3,7 @@ using EFT;
 
 namespace SAIN.Components.PlayerComponentSpace.PersonClasses;
 
-public class PersonActiveClass(PlayerComponent playerComponent)
+public class PersonActiveClass
 {
     public event Action<bool> OnPlayerActiveChanged;
 
