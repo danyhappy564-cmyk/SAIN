@@ -44,6 +44,16 @@ public class DoorOpener : BotComponentClassBase
         return true;
     }
 
+    /// <summary>
+    /// Bypasses the DOOR_UPDATE_INTERVAL poll and forces the next SelectDoor call to rescan for
+    /// doors immediately. Used when a bot is physically jammed against a shut door faster than the
+    /// throttled scan can register it (typical while sprinting straight at one).
+    /// </summary>
+    public void ForceRecheck()
+    {
+        _nextDoorUpdateTime = 0f;
+    }
+
     public DoorDataStruct GetActiveDoor()
     {
         if (_interactionDoors.Count > 0 && _interactionDoorIndex < _interactionDoors.Count)
