@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EFT;
+using EFT.Interactive;
 using SAIN.Components;
 using SAIN.Helpers;
 using SAIN.Preset.GlobalSettings;
@@ -512,8 +513,21 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
             _lastCheckedMoveData = currentMoveData;
             if (_timeNotMoving > 0f)
             {
-                if (CheckObjectInWay(BotPosition(), CurrentCornerMoveData.CornerDirectionFromBot, 1f, 0.2f, 1f))
+                if (CheckObjectInWay(BotPosition(), CurrentCornerMoveData.CornerDirectionFromBot, 1f, 0.2f, 1f, out RaycastHit blockingHit))
                 {
+                    // A sprinting bot can slam into a still-shut door before DoorOpener's throttled
+                    // scan (every 0.5s) has it registered in range - by the time it's jammed here,
+                    // this generic obstacle check sees the door as just another wall and requests a
+                    // full path recalc, which routes right back through the same door and repeats.
+                    // Treat a door specially: force DoorOpener to rescan immediately instead of
+                    // waiting out its poll, and let door interaction take the next tick instead of
+                    // abandoning the path.
+                    if (blockingHit.collider != null && blockingHit.collider.GetComponentInParent<Door>() != null)
+                    {
+                        Bot.DoorOpener.ForceRecheck();
+                        _timeNotMoving = -1f;
+                        return false;
+                    }
                     //Logger.LogDebug($"[{Bot.name}]:[{Id}]: recalc from object in way: " +
                     //    $"{currentMoveData.CornerDirectionFromBot}:" +
                     //    $"{currentMoveData.CornerDirectionFromBotNormal}:" +
@@ -550,9 +564,10 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
     private static bool CheckObjectInWay(
         Vector3 botPosition,
         Vector3 direction,
-        float height = 1f,
-        float sphereCastRadius = 0.2f,
-        float maxDist = 1f
+        float height,
+        float sphereCastRadius,
+        float maxDist,
+        out RaycastHit hit
     )
     {
         if (
@@ -560,7 +575,7 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
                 botPosition + (Vector3.up * height),
                 sphereCastRadius,
                 direction,
-                out RaycastHit hit,
+                out hit,
                 maxDist,
                 LayerMaskClass.PlayerStaticCollisionsMask
             )
