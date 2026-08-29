@@ -7,7 +7,7 @@ using UnityEngine.AI;
 
 namespace SAIN.SAINComponent.SubComponents.CoverFinder;
 
-public class CoverAnalyzer(BotComponent bot, CoverFinderComponent coverFinder) : BotBase(bot)
+public class CoverAnalyzer(BotComponent bot) : BotBase(bot)
 {
     // Reused for path checks so failed candidates don't allocate a throwaway PathData (+ NavMeshPath).
     // On success the instance is handed to the retained CoverPoint and replaced with a fresh scratch.
