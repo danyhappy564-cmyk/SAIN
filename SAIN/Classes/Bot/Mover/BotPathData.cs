@@ -282,6 +282,7 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
 
     private float _lastCheckStuckTime;
     private float _timeNotMoving;
+    private float _doorBlockedSince = -1f;
     private CornerMoveData _lastCheckedMoveData;
     private float _unpauseTime;
     private float _pauseStartTime;
@@ -414,6 +415,7 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
 
         _lastCheckStuckTime = -1f;
         _timeNotMoving = -1f;
+        _doorBlockedSince = -1f;
         _lastCheckedMoveData = new();
         _unpauseTime = -1f;
         _pauseStartTime = -1f;
@@ -505,6 +507,7 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
             if (_lastCheckedMoveData.SqrMagnitude - currentMoveData.SqrMagnitude > 0.01f)
             {
                 _timeNotMoving = -1f;
+                _doorBlockedSince = -1f;
             }
             else if (_timeNotMoving < 0)
             {
@@ -524,9 +527,20 @@ public class BotPathDataManual(BotComponent bot, IBotPathFinder pathFinder) : IB
                     // abandoning the path.
                     if (blockingHit.collider != null && blockingHit.collider.GetComponentInParent<Door>() != null)
                     {
-                        Bot.DoorOpener.ForceRecheck();
-                        _timeNotMoving = -1f;
-                        return false;
+                        // Give-up valve: a door that genuinely can't be opened (locked, not
+                        // Operatable, bot won't kick it) would otherwise force-recheck forever
+                        // and never reach the recalc-from-no-move path below. Only take the
+                        // "wait on the door" branch for a bounded window, then fall through to
+                        // the normal obstacle handling so the bot reroutes instead of deadlocking.
+                        const float DOOR_BLOCKED_GIVEUP_TIME = 4f;
+                        if (_doorBlockedSince < 0f) _doorBlockedSince = Time.time;
+                        if (Time.time - _doorBlockedSince < DOOR_BLOCKED_GIVEUP_TIME)
+                        {
+                            Bot.DoorOpener.ForceRecheck();
+                            _timeNotMoving = -1f;
+                            return false;
+                        }
+                        _doorBlockedSince = -1f;
                     }
                     //Logger.LogDebug($"[{Bot.name}]:[{Id}]: recalc from object in way: " +
                     //    $"{currentMoveData.CornerDirectionFromBot}:" +
