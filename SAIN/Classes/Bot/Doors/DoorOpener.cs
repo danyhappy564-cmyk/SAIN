@@ -213,7 +213,7 @@ public class DoorOpener : BotComponentClassBase
 #if DEBUG
                 Logger.LogDebug($"Found door from hit collider [PlayerStaticDoorMask] [{hit.collider.name}]");
 #endif
-                if (data.Door.DoorState == EDoorState.Open)
+                if (data.Door.DoorState == EDoorState.Open && !RecentlySelfOpened(data))
                 {
                     interactionType = EInteractionType.Close;
                     return true;
@@ -237,7 +237,7 @@ public class DoorOpener : BotComponentClassBase
 #if DEBUG
                 Logger.LogDebug($"Found door from hit collider [DoorLayer] [{hit.collider.name}]");
 #endif
-                if (data.Door.DoorState == EDoorState.Open)
+                if (data.Door.DoorState == EDoorState.Open && !RecentlySelfOpened(data))
                 {
                     interactionType = EInteractionType.Close;
                     return true;
@@ -278,7 +278,7 @@ public class DoorOpener : BotComponentClassBase
                 Logger.LogDebug($"hit door  [Door.collider.Raycast]");
                 DebugGizmos.DrawLine(ray.origin, hit.point, Color.red, 0.25f, 30f, true);
 #endif
-                if (data.Door.DoorState == EDoorState.Open)
+                if (data.Door.DoorState == EDoorState.Open && !RecentlySelfOpened(data))
                 {
                     interactionType = EInteractionType.Close;
                     return true;
@@ -303,6 +303,7 @@ public class DoorOpener : BotComponentClassBase
             var candidate = doors[i];
             if (!CanInteract(candidate.Link)) continue;
             if (candidate.Door.DoorState != EDoorState.Shut && candidate.Door.DoorState != EDoorState.Open) continue;
+            if (candidate.Door.DoorState == EDoorState.Open && RecentlySelfOpened(candidate)) continue;
             if (candidate.CurrentSqrMagnitude >= closestSqr) continue;
             closestSqr = candidate.CurrentSqrMagnitude;
             index = i;
@@ -320,6 +321,23 @@ public class DoorOpener : BotComponentClassBase
         interactionType = EInteractionType.Open; // Default to open if no doors found
         return false;
     }
+
+    // (08-29 field report, Korean discord: a bot fleeing/fighting through a doorway
+    // sometimes ran face-first into the SAME door it had just opened, for ~15s until
+    // it "gave up" and reopened it.) every branch above treats ANY Open door in range
+    // as something to close, with no notion of "I'm the one who just opened this and
+    // haven't finished walking through it yet". a bot that lingers at the threshold
+    // under combat steering (backpedaling, reacting to fire, group holdup) easily
+    // takes longer than a clean walk-through, so the moment it re-evaluates doors it
+    // decides to shut the one it's still standing in — then paths straight at the now-
+    // closed door it thinks is open. LastCloseTime is stamped (InteractWithDoor) the
+    // instant we start opening a Shut door, so a short grace window on it is a direct,
+    // minimal fix: don't reconsider closing a door for a few seconds after WE opened
+    // it, regardless of how long the bot dawdles at the threshold.
+    private const float JUST_OPENED_GRACE = 6f;
+
+    private static bool RecentlySelfOpened(in DoorDataStruct data)
+        => Time.time - data.LastCloseTime < JUST_OPENED_GRACE;
 
     private static bool IsDoorOpenable(Door door)
     {
