@@ -18,9 +18,10 @@
 
 > **원작자 · 원본**
 > **Solarint** — https://github.com/Solarint/SAIN · SAIN(Solarint's AI Modifications)
-> 이 포크는 ArchangelWTF의 `develop`(PR #48)까지 머지된 지점에서 갈라져 나왔습니다.
+> 4.x 유지보수: **ArchangelWTF** — https://github.com/ArchangelWTF/SAIN
 >
-> 기능은 원작 그대로고, **봇이 문 앞에서 낑기는 문제**만 고쳤습니다.
+> 이 포크는 상류 **v4.5.1** 기준입니다. 기능은 원작 그대로고,
+> **봇이 문 앞에서 낑기는 문제**만 고쳤습니다.
 
 SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성격, 엄폐, 조준, 소리 반응, 스쿼드
 행동. 이 저장소는 그중 **문 처리(`DoorOpener`, `BotPathData`)** 쪽 버그를 잡은 포크입니다.
@@ -32,7 +33,7 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
 
 ## 고친 것
 
-### 1. 문 감지 범위가 너무 좁았음 (`c9a0e5be`)
+### 1. 문 감지 범위가 너무 좁았음 (`461f6e34`)
 
 전투 중 도망치는 봇은 스프린트 조향 스무딩 때문에 **바라보는 방향과 실제로 밀착한 문이
 안 맞습니다.** `RaycastToDoors`의 좁은 방향성 캐스트는 매 틱 그 문을 놓치는데, ORBIT의 문
@@ -43,7 +44,7 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
   그냥 고릅니다 (`doors` 후보는 `DoorDataStruct.InRangeToInteract`로 이미 걸러져 있음).
   방향이 우연히 맞아떨어질 때까지 기다리지 않습니다.
 
-### 2. 스턱 체크가 봇을 문에서 **떼어내고** 있었음 (`265d9a2e`)
+### 2. 스턱 체크가 봇을 문에서 **떼어내고** 있었음 (`aa25357d`)
 
 봇이 아직 안 열린 문으로 전력 질주하면, `DoorOpener`의 스캔은 0.5초 폴링이라 스프린트 속도에
 경주를 집니다 — 부딪히는 바로 그 순간 문이 등록되어 있지 않습니다. 그러면 `CheckStuck`이
@@ -54,13 +55,13 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
 벽처럼 우회하지 않고, `DoorOpener`가 폴링을 건너뛰고 **바로 다음 틱에 재스캔**하도록
 강제합니다. 경로를 포기하는 것보다 문 상호작용에 우선순위를 줍니다.
 
-### 3. …근데 그러면 못 여는 문에서 영원히 대기 (`37d2760b`)
+### 3. …근데 그러면 못 여는 문에서 영원히 대기 (`56bb4f7d`)
 
 2번 수정이 무조건적이라, **진짜로 못 여는 문**(잠김, `Operatable` 아님, 발로 안 차는 문)이면
 탈출구 없이 계속 재확인만 하게 됐습니다. 대기를 **4초로 제한**했습니다 — 그 안에 안 풀리면
 일반 장애물 처리로 떨어져서 봇이 우회합니다.
 
-### 4. 봇이 자기가 연 문을 자기한테 닫음 (`a3adf154`)
+### 4. 봇이 자기가 연 문을 자기한테 닫음 (`cb0acfaf`)
 
 필드 리포트: 도망/교전하며 문을 통과하던 봇이 **방금 자기가 연 문에 정면으로 처박혀서**
 ~15초간 멈췄다가 "포기"하고 다시 여는 현상.
@@ -74,7 +75,7 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
 (`LastCloseTime`이 그 시점에 이미 찍히고 있어서 그걸 그대로 씁니다). 봇이 문턱에서 얼마나
 꾸물거리든 상관없습니다.
 
-### 5. 빌드 경고 5개 (`ecf8148c`)
+### 5. 빌드 경고 5개 (`94fbb4e6`)
 
 억제(suppress)가 아니라 **원인을 고쳤습니다**: 안 쓰는 nullable 필드, 캡처된 `ref` 매개변수,
 안 쓰는 생성자 매개변수 2건, 발화되지 않던 이벤트.
@@ -90,10 +91,38 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
 
 ## 버전 / 호환
 
-이 포크는 **SPT 4.0** 계열 기준입니다 (`SAINServerMod`의 `SptVersion`이 `~4.0.0`).
+**상류 v4.5.1 (SPT 4.1) 기준입니다.** 이전 판은 4.4.3(SPT 4.0) 기준이었는데, 상류 v4.5.1 위로
+문 수정 4개를 그대로 옮겨왔습니다.
 
-> ⚠️ **SPT 4.1을 쓰고 있다면 이 포크가 아니라 Solarint의 공식 4.1 빌드(SAIN 4.5.x)를
-> 쓰세요.** 위 문 수정들은 4.1 코드베이스에 아직 옮기지 않았습니다.
+동기화하면서 확인한 것:
+
+- 상류 v4.4.3 → v4.5.1 은 커밋 30개 / 403파일이지만 **문·끼임 관련 수정은 하나도 없습니다.**
+  위 4개 버그는 상류에 그대로 남아 있고, 이 포크에만 고쳐져 있습니다.
+- 리베이스 충돌은 0건이었습니다. 다만 충돌이 없다고 맞는 건 아니라서, 수정이 건드리는
+  심볼(`CanInteract`, `_nextDoorUpdateTime`, `DoorDataStruct.LastCloseTime` /
+  `.CurrentSqrMagnitude`, `OnPathComplete`, `BotComponent.DoorOpener`)을 v4.5.1 코드에서
+  **하나씩 대조**했습니다. 전부 그대로 있고 시그니처도 같습니다.
+- `CheckObjectInWay` 는 시그니처를 바꿨는데(`out RaycastHit` 추가), 호출부가 v4.5.1에도
+  **그 한 곳뿐**이라 깨지는 곳이 없습니다.
+- `OnPathComplete` 는 상류가 **선언만 해두고 호출하지 않던** 이벤트입니다. 이 포크에서
+  `SAINMoverClass.PathComplete`가 실제로 발생시킵니다.
+
+### 상류 버그 하나를 같이 고쳤습니다
+
+**상류 v4.5.1 은 서버 모드가 아예 빌드되지 않습니다.** `SainSectionEditor.razor` 의 foreach
+변수 이름이 `section` 이라 `@section.Name` 이 멤버 접근이 아니라 **`@section` 지시문**으로
+파싱됩니다:
+
+```
+RZ2005: The 'section' directive must appear at the start of the line
+RZ9986: Component attributes do not support complex content
+```
+
+변수명만 바꿔서 해결했습니다. 상류 태그를 그대로 체크아웃해도 똑같이 실패하는 걸 확인했으니
+이 포크가 만든 문제가 아닙니다.
+
+`SptVersion` 도 상류의 `4.1.3` 에서 **`4.1.5`** 로 올렸습니다 (실제로 돌리는 서버 버전).
+그대로 빌드됩니다.
 
 ## 빌드
 
@@ -101,8 +130,13 @@ SAIN은 EFT 봇 AI를 통째로 갈아끼우는 대형 모드입니다 — 성�
 dotnet build SAIN.slnx -c Release
 ```
 
-참조는 NuGet(`BepInEx.Core 5.*`, `UnityEngine.Modules 2022.3.43`)과 `References/` 폴더에서
-가져옵니다. 클라(`SAIN`, netstandard2.1) + 서버(`SAINServerMod`) 두 프로젝트입니다.
+클라(`SAIN`, netstandard2.1) + 서버(`SAINServerMod`, net10.0) 두 프로젝트입니다.
+Release 빌드하면 `release/` 에 배포용 zip 도 같이 나옵니다 (`-p:SkipPackage=true` 로 끕니다).
+
+참조는 `References/` 폴더(상류가 SPT 4.1용으로 갱신함)와 NuGet에서 가져옵니다.
+클라 쪽은 **BepInEx 전용 피드**(`https://nuget.bepinex.dev/v3/index.json`)에서
+`BepInEx.Core 5.*` 와 `UnityEngine.Modules 2022.3.43` 를 받아야 합니다 — `nuget.config` 에
+이미 등록돼 있습니다.
 
 ## 라이선스
 
