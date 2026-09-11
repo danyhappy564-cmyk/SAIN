@@ -43,9 +43,9 @@ else
                 <div class="sain-editor-nav">
                     <MudList T="string" SelectedValue="_selected" SelectedValueChanged="v => _selected = v"
                              Dense="true" Color="Color.Primary">
-                        @foreach (var section in _sections)
+                        @foreach (var sectionItem in _sections)
                         {
-                            <MudListItem T="string" Value="@section.Name" Text="@section.Name" />
+                            <MudListItem T="string" Value="@sectionItem.Name" Text="@sectionItem.Name" />
                         }
                     </MudList>
                 </div>
