@@ -370,4 +370,4 @@ ServerMod/dist
 .idea/
 
 # Build files
-Build/
+Build/release/
